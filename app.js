@@ -5,6 +5,7 @@ const userRouter = require('./routes/userRoutes.js');
 
 const app = express(); 
 console.log("hi")
+app.use(express.json());
 // Read and parse the tours JSON file
 // const tours = JSON.parse(
 //   fs.readFileSync("/Users/manmeetkaur/Desktop/natours_app/data/tours-simple.json")
