@@ -18,6 +18,7 @@ router
   //handle by model [unique],[jaruri]
   .post(tourController.createTour);
 
+  
 router
   .route('/:id')
   .get(tourController.getTour)

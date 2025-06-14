@@ -1,5 +1,7 @@
 // const fs = require('fs');
 const Tour=require('./../models/tourModel.js')
+const APIFeatures = require('./../utils/apiFeatures');
+
 // Read and parse the tours JSON file
 
 // const tours = JSON.parse(
@@ -33,10 +35,72 @@ const Tour=require('./../models/tourModel.js')
 // };
      //---------------------------GET-ALL-TOUR------------------------
 exports.getAllTours = async(req, res) => {
+  //build query
+  //1a-filtering
+  // const qr={...req.query}
+  // const excludedFields=['page','sort','limit','fields'];
+  // excludedFields.forEach(el=>
+  //   delete qr[el]
+  //   )
+  //  //1b-advance filtering
+  //  let queryStr = JSON.stringify(qr);
+  //  queryStr = queryStr.replace(/\b(gte|gt|lt|lte)\b/g
+  //  , match =>
+  //   `$${match}`
+
+  //  )
+
+  //  let query=Tours.find(JSON.parse(queryStr))
+  //  //2 sort query
+  //  if(req.query.sort){
+  //   const sortBy=req.query.sort.split(',').join(' ')
+  //   queryStr= queryStr+ `&sort=${sortBy}`
+  //   }
+  //     //3-executing query
+  //     try {
+  //       const tours = await query;
+  //       res.status(200).json({
+  //         status: 'success',
+  //         results: tours.length,
+  //         data: tours
+  //         });
+  //         } catch (err) {
+  //           res.status(404).json({
+  //             status: 'fail',
+  //             message: err
+  //             });
+  //             }
+  //             //4 field limiting
+  //             // if(req.query.fields){
+    //             //   const fields= req.query.fields.split(',').join(' ')
+    //             //   query= query.select(fields)
+    //             //   }
+    //             //   //5 pagination
+    //             //   if(req.query.page){
+      //             //     const limit=parseInt(req.query.limit)||10
+      //             //     const page=parseInt(req.query.page)||1
+      //             //     const skip=(page-1)*limit
+      //             //     query=query.skip(skip).limit(limit)
+      //             //     }
+      //             //     //6-executing query
+      //             //     try {
+        //             //       const tours = await query;
+        //             //       res.status(200).json({
+          //             //         status: 'success',
+          //             //         results: tours.length,
+          //             //         data: tours
+          //             //         });
+          
+
 
   console.log("hit1");
   try {
-    const tours = await Tour.find();
+    const features = new APIFeatures(Tour.find(), req.query)
+        .filter()
+        .sort()
+        .limitFields()
+        .paginate();
+      const tours = await features.query;
     res.status(200).json({
       status: 'success',
       results: tours.length,
@@ -110,18 +174,64 @@ try {
   };
 //--------------------UPDATE-TOUR--------------------------------------
 
-exports.updateTour = (req, res) => {
-  res.status(200).json({
-    status: 'success',
-    data: {
-      tour: '<Updated tour here...>'
+// Define and export an asynchronous function to handle tour updates
+exports.updateTour = async (req, res) => {
+  console.log("hit4")
+  try {
+    // Try to find a tour by its ID (from the URL param) and update it with the data in req.body
+    const tour = await Tour.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,           // Return the updated document, not the original
+      runValidators: true  // Run schema validation rules on the updated data
+    });
+
+    // If no tour is found with the given ID, return a 404 Not Found response
+    if (!tour) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Invalid ID. Tour not found.'
+      });
     }
-  });
+
+    // If update is successful, send back the updated tour data in the response
+    res.status(200).json({
+      status: 'success',
+      data: {
+        tour: tour // shorthand for tour: tour
+      }
+    });
+
+  } catch (err) {
+    // If any error occurs during the update (e.g., validation fails), catch it and respond with status 400
+    res.status(400).json({
+      status: 'fail',
+      message: err.message // include the error message for easier debugging
+    });
+  }
 };
 
-exports.deleteTour = (req, res) => {
-  res.status(204).json({
-    status: 'success',
-    data: null
-  });
+
+//--------------------DELETE-TOUR--------------------------------------
+exports.deleteTour = async (req, res) => {
+  console.log("hit5")
+  try {
+    const tour = await Tour.findByIdAndDelete(req.params.id);
+
+    if (!tour) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'Invalid ID. Tour not found.'
+      }); // return stops further execution
+    }
+
+    res.status(204).json({
+      status: 'success',
+      data: null
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err.message
+    });
+  }
 };
+
