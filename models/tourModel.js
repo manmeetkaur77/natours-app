@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-// const slugify = require('slugify');
+const slugify = require('slugify');
 // const validator = require('validator');
 
 const tourSchema = new mongoose.Schema(
@@ -79,21 +79,31 @@ const tourSchema = new mongoose.Schema(
       default: false
     }
   },
-  // {
-  //   toJSON: { virtuals: true },
-  //   toObject: { virtuals: true }
-  // }
+  {
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 );
+// -------------------Virtual Properties------------------------------
+// Explanation:
+// What is a virtual property?-->>
+// A virtual is a property that is not stored in MongoDB, but is computed on the fly when the data is retrieved using Mongoose.
+// Useful for derived fields based on existing data.
+// durationWeeks-->>
+// This virtual calculates the number of weeks from the duration field (assumed to be in days).
+// It divides the duration by 7.
+// function()-->>  A regular function is used (not arrow function) so that this refers to the current document.
+
 
 tourSchema.virtual('durationWeeks').get(function() {
   return this.duration / 7;
 });
-
+// ----------------------------------------------------------------
 // // DOCUMENT MIDDLEWARE: runs before .save() and .create()
-// tourSchema.pre('save', function(next) {
-//   this.slug = slugify(this.name, { lower: true });
-//   next();
-// });
+tourSchema.pre('save', function(next) {
+  this.slug = slugify(this.name, { lower: true });
+  next();
+});
 
 // // tourSchema.pre('save', function(next) {
 // //   console.log('Will save document...');
@@ -106,26 +116,26 @@ tourSchema.virtual('durationWeeks').get(function() {
 // // });
 
 // // QUERY MIDDLEWARE
-// // tourSchema.pre('find', function(next) {
-// tourSchema.pre(/^find/, function(next) {
-//   this.find({ secretTour: { $ne: true } });
+// tourSchema.pre('find', function(next) {
+tourSchema.pre(/^find/, function(next) {
+  this.find({ secretTour: { $ne: true } });
 
-//   this.start = Date.now();
-//   next();
-// });
+  this.start = Date.now();
+  next();
+});
 
-// tourSchema.post(/^find/, function(docs, next) {
-//   console.log(`Query took ${Date.now() - this.start} milliseconds!`);
-//   next();
-// });
+tourSchema.post(/^find/, function(docs, next) {
+  console.log(`Query took ${Date.now() - this.start} milliseconds!`);
+  next();
+});
 
 // // AGGREGATION MIDDLEWARE
-// tourSchema.pre('aggregate', function(next) {
-//   this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
+tourSchema.pre('aggregate', function(next) {
+  this.pipeline().unshift({ $match: { secretTour: { $ne: true } } });
 
-//   console.log(this.pipeline());
-//   next();
-// });
+  console.log(this.pipeline());
+  next();
+});
 
 const Tour = mongoose.model('Tour', tourSchema);
 
